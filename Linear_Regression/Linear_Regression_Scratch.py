@@ -16,9 +16,9 @@ validation = int((size*0.15)+train)
 
 testing = int((size*0.15)+validation)
 
-x1 = reading_score.iloc[:train]
+x1 = reading_score.iloc[:train].to_numpy()
 
-y1 = english_score.iloc[:train]
+y1 = english_score.iloc[:train].to_numpy()
 
 average = 0
 
@@ -33,37 +33,29 @@ intercept = 0
 # TRAINING LOOP
 for n in range(0, 100):
     # Gradient Descent Step (Using the first 100 or len(x1))
-    for i in range(0, 100):
-        guess = slope * x1.iloc[i] + intercept
-        
-        # Derivatives of MSE
-        error_slope = -2 * x1.iloc[i] * (y1.iloc[i] - guess)
-        error_int = -2 * (y1.iloc[i] - guess)
-        
-        # Update weights
-        slope -= (0.00001 * error_slope)
-        intercept -= (0.00001 * error_int)
+    guess = (slope * x1) + intercept
+    
+    # Derivatives of MSE
+    error_slope = numpy.mean(-2 * x1 * (y1 - guess)) + (2 * 0.000000000001 * slope)
+    error_int = numpy.mean(-2 * (y1 - guess))
+    
+    # Update weights
+    slope -= (0.00001 * error_slope)
+    intercept -= (0.00001 * error_int)
 
 # FINAL TESTING
-test_x = reading_score.iloc[validation : testing]
-test_y = english_score.iloc[validation : testing]
-
+test_x = reading_score.iloc[validation : testing].to_numpy()
+test_y = english_score.iloc[validation : testing].to_numpy()
 # It's often better to calculate the average of the TEST set for R-squared
 test_average = test_y.mean() 
 
 total_sum_average = 0
 model_miss = 0
 
-for i in range(len(test_x)):
-    xi = test_x.iloc[i]
-    yi = test_y.iloc[i]
-    
-    guess = (slope * xi) + intercept
-    
-    # Sum of Squares Total (SST)
-    total_sum_average += (yi - test_average)**2
-    # Sum of Squares Residual (SSR)
-    model_miss += (yi - guess)**2
+guess = (slope * test_x) + intercept
+
+total_sum_average = numpy.sum((test_y - test_average)**2)
+model_miss = numpy.sum((test_y - guess)**2) + (0.000000000001 * slope**2)
 
 accuracy = (1 - (model_miss / total_sum_average)) * 100
 
