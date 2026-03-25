@@ -4,62 +4,79 @@ import pandas as pd
 
 df = pd.read_csv('StudentsPerformance.csv')
 
-math_score = df['reading score']
+reading_score = df['reading score']
 
 english_score = df['writing score']
 
-x = math_score
+size = int(len(reading_score))
 
-y = english_score
+train = int(size*0.7)
+
+validation = int((size*0.15)+train)
+
+testing = int((size*0.15)+validation)
+
+x1 = reading_score.iloc[:train]
+
+y1 = english_score.iloc[:train]
 
 average = 0
 
-for i in y:
+for i in y1:
     average+=i
     
-average=average/len(y)
+average=average/len(y1)
 
 slope = 0
 intercept = 0
 
+# TRAINING LOOP
 for n in range(0, 100):
-    
-    total_sum_average = 0
-
-    model_miss = 0
-
+    # Gradient Descent Step (Using the first 100 or len(x1))
     for i in range(0, 100):
-
-        guess = slope*x[i]+intercept
+        guess = slope * x1.iloc[i] + intercept
         
-        total_sum_average+=(y[i]-average)**2
+        # Derivatives of MSE
+        error_slope = -2 * x1.iloc[i] * (y1.iloc[i] - guess)
+        error_int = -2 * (y1.iloc[i] - guess)
         
-        model_miss+=(y[i]-guess)**2
+        # Update weights
+        slope -= (0.00001 * error_slope)
+        intercept -= (0.00001 * error_int)
 
-        error1 = 2*(y[i]-guess)*-x[i]
+# FINAL TESTING
+test_x = reading_score.iloc[validation : testing]
+test_y = english_score.iloc[validation : testing]
 
-        error2 = 2*(y[i]-guess)*-1
-        
-        slope-=(0.0000001*error1)
+# It's often better to calculate the average of the TEST set for R-squared
+test_average = test_y.mean() 
 
-        intercept-=(0.0000001*error2)
-        
-    if(n == 99):
+total_sum_average = 0
+model_miss = 0
 
-        print(f"Slope: {slope}")
+for i in range(len(test_x)):
+    xi = test_x.iloc[i]
+    yi = test_y.iloc[i]
+    
+    guess = (slope * xi) + intercept
+    
+    # Sum of Squares Total (SST)
+    total_sum_average += (yi - test_average)**2
+    # Sum of Squares Residual (SSR)
+    model_miss += (yi - guess)**2
 
-        print(f"Intercept: {intercept}")
+accuracy = (1 - (model_miss / total_sum_average)) * 100
 
-        score = 100
+print(f"Final Model accuracy: {accuracy:.2f}%")
 
-        result = slope*score+intercept
+score = 100
 
-        print(f"Student with a reading score of {score}% gets a writing score: {result}%")
-        
-        print(f"Dumb guess {total_sum_average}")
-        
-        print(f"Model miss {model_miss}")
-        
-        print(f"Model accuracy: {(1-(model_miss/total_sum_average))*100}%")
+result = slope*score+intercept
 
-        print("\n")
+print(f"Student with a reading score of {score}% gets a writing score: {result}%")
+
+print(f"Dumb guess {total_sum_average}")
+
+print(f"Model miss {model_miss}")
+
+print(f"Model accuracy: {(1-(model_miss/total_sum_average))*100}%")
